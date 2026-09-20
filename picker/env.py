@@ -8,6 +8,7 @@ the codebase. Invalid actions never raise and never terminate the episode.
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 
 from .layout import DIRECTION_DELTAS, Cell, Layout
 from .rewards import shaped_reward
@@ -17,10 +18,20 @@ from .types import Action, Instance, State
 class PickerEnv:
     """A single-agent order-picking episode over one :class:`Instance`."""
 
-    def __init__(self, instance: Instance) -> None:
-        """Build the environment and its layout, then reset it."""
+    def __init__(
+        self,
+        instance: Instance,
+        reward_fn: Callable[[Layout, State, Action, State], float] = shaped_reward,
+    ) -> None:
+        """Build the environment and its layout, then reset it.
+
+        ``reward_fn`` chooses the reward returned by :meth:`step`. It defaults to
+        the correct :func:`shaped_reward`; pass ``naive_reward`` to exercise the
+        deliberately broken exhibit through the normal environment API.
+        """
         self.instance = instance
         self.layout = Layout(instance.rows, instance.cols)
+        self.reward_fn = reward_fn
         self._initial_counts: dict[str, int] = {}
         self._state: State
         self.reset()
@@ -68,7 +79,7 @@ class PickerEnv:
         if st.steps_taken >= self.instance.step_limit:
             st.done = True
 
-        reward = shaped_reward(self.layout, before, action, st)
+        reward = self.reward_fn(self.layout, before, action, st)
         self._check_invariants()
         return self.observation(), reward, st.done, info
 
