@@ -37,6 +37,16 @@ Choices made where the build spec was silent, each with a one-line rationale.
 - **Solver search.** The exact solver enumerates covering subsets of the shelves
   that stock ordered SKUs and takes the cheapest closed tour over their aisle
   cells, which yields the minimum MOVE count while reusing cached BFS distances.
+- **Solver guard is on stops, not units.** Because the search enumerates subsets
+  and permutations of the shelves stocking ordered SKUs, its cost scales with the
+  number of distinct *stops*, not the number of ordered units (three units from
+  one shelf is one stop). The guard is therefore `MAX_STOPS_FOR_EXACT` on
+  `len(relevant)`, checked before enumeration; the earlier unit-based guard
+  discarded large-but-cheap orders for no computational reason.
+- **Pluggable reward.** `PickerEnv.__init__` takes a `reward_fn` keyword that
+  defaults to `shaped_reward`, so a consumer can swap in `naive_reward` (the
+  broken exhibit) through the normal environment API rather than importing it
+  directly; the verifier keeps the default and is unaffected.
 - **SKU naming.** SKUs are named `SKU-A`, `SKU-B`, ... in order of assignment,
   with ordered SKUs taking the first letters and decoys the next, for
   reproducible, readable identifiers.

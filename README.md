@@ -43,6 +43,10 @@ Both live in `picker/rewards.py`:
   1999) that telescopes to zero around any closed loop, leaving the optimal
   policy unchanged.
 
+`PickerEnv(instance, reward_fn=...)` selects which reward `step()` returns; it
+defaults to `shaped_reward`, and passing `naive_reward` exercises the broken
+exhibit through the normal environment API.
+
 ## Repo map
 
     picker/
@@ -56,13 +60,21 @@ Both live in `picker/rewards.py`:
       solver.py      exact brute-force optimum for small instances
       run.py         the one command
     tests/
-      test_verifier.py  the four required verifier cases
+      test_verifier.py    the four required verifier cases
+      test_solver.py      exact solver covers every generated instance
+      test_env_reward.py  step() honours a pluggable reward_fn
 
 ## Variants
 
 `V1_SINGLE_AISLE` (sanity), `V2_MULTI_AISLE`, and `V3_DUPLICATE_LOCATIONS`
 (a SKU stocked at two or more locations). `run.py` accepts `--seeds N` and
 `--variant NAME`.
+
+The results table reports `base_all` (mean baseline moves over every instance)
+and `opt_n` (how many instances the exact solver covered); the `base_mv`,
+`opt_mv` and `gap_%` columns are all computed over that same covered subsample
+so they compare like for like. If any variant is only partially covered, a
+warning naming those variants is printed after the table.
 
 ## Running the tests
 
