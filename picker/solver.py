@@ -1,10 +1,16 @@
 """Exact brute-force optimum for small instances.
 
 Computes the minimum number of MOVE actions needed to collect the order and
-return to the depot. It searches over which shelves to visit (the choice of
-source location per unit) and over the order in which they are visited, using
-the layout's cached BFS distances. Returns ``None`` when the instance is too
-large.
+return to the depot, searching over which shelves to visit and the order in
+which to visit them, using the layout's cached BFS distances.
+
+The search enumerates subsets of the shelves that stock ordered SKUs and
+permutations of each covering subset, so its cost is governed by the number of
+distinct *stops*, not the number of ordered units: three units taken from one
+shelf is a single stop, no harder than one unit. The guard is therefore on the
+stop count (``MAX_STOPS_FOR_EXACT``), applied before enumeration begins; the
+search is super-exponential in stops and would blow up on a larger warehouse.
+Returns ``None`` only when an instance has more relevant shelves than that bound.
 """
 
 from __future__ import annotations
@@ -14,7 +20,7 @@ from itertools import permutations
 from .layout import Cell, Layout
 from .types import Instance
 
-MAX_ITEMS_FOR_EXACT = 7
+MAX_STOPS_FOR_EXACT = 9
 
 _DEPOT: Cell = (0, 0)
 
@@ -22,16 +28,16 @@ _DEPOT: Cell = (0, 0)
 def optimal_cost(layout: Layout, instance: Instance) -> int | None:
     """Minimum number of MOVE actions over all pick sequences, or None if large."""
     order = {sku: qty for sku, qty in instance.order.items() if qty > 0}
-    total_units = sum(order.values())
-    if total_units > MAX_ITEMS_FOR_EXACT:
-        return None
 
-    # Shelves that stock at least one ordered SKU are the only relevant stops.
+    # Shelves that stock at least one ordered SKU are the only relevant stops;
+    # the search cost is driven by the number of stops, not by ordered units.
     relevant: list[Cell] = [
         cell
         for cell in sorted(instance.shelves)
         if any(instance.shelves[cell].get(sku, 0) > 0 for sku in order)
     ]
+    if len(relevant) > MAX_STOPS_FOR_EXACT:
+        return None
 
     best: int | None = None
     # Enumerate every subset of relevant shelves; keep those that can cover the
