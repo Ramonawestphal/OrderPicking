@@ -23,9 +23,9 @@ class _VariantStats:
         self.name = name
         self.instances = 0
         self.successes = 0
-        self.baseline_moves: list[int] = []
-        self.optimal_moves: list[int] = []
-        self.gaps: list[float] = []
+        self.baseline_moves_all: list[int] = []
+        # (baseline_moves, optimal) for instances the exact solver covered.
+        self.covered: list[tuple[int, int]] = []
 
 
 def _run_instance(variant: str, seed: int, stats: _VariantStats) -> None:
@@ -42,13 +42,11 @@ def _run_instance(variant: str, seed: int, stats: _VariantStats) -> None:
 
     stats.instances += 1
     stats.successes += ok
-    stats.baseline_moves.append(moves)
+    stats.baseline_moves_all.append(moves)
 
     optimal = solver.optimal_cost(env.layout, instance)
     if optimal is not None:
-        stats.optimal_moves.append(optimal)
-        if optimal > 0:
-            stats.gaps.append((moves - optimal) / optimal * 100.0)
+        stats.covered.append((moves, optimal))
 
 
 def _mean(values: list[float]) -> float:
@@ -57,20 +55,31 @@ def _mean(values: list[float]) -> float:
 
 
 def _print_table(all_stats: list[_VariantStats]) -> None:
-    """Print the per-variant results table."""
+    """Print the per-variant results table.
+
+    ``base_all`` is the mean baseline move count over every instance; the
+    ``base_mv``, ``opt_mv`` and ``gap_%`` columns are all computed over the same
+    ``opt_n`` instances that the exact solver covered, so they compare like for
+    like.
+    """
     header = (
-        f"{'variant':<24}{'inst':>6}{'success':>9}"
-        f"{'base_mv':>9}{'opt_mv':>9}{'gap_%':>8}"
+        f"{'variant':<24}{'inst':>6}{'success':>9}{'base_all':>10}"
+        f"{'opt_n':>7}{'base_mv':>9}{'opt_mv':>9}{'gap_%':>8}"
     )
     print(header)
     print("-" * len(header))
     for st in all_stats:
         rate = st.successes / st.instances if st.instances else 0.0
+        cov_moves = [m for m, _o in st.covered]
+        cov_opt = [o for _m, o in st.covered]
+        gaps = [(m - o) / o * 100.0 for m, o in st.covered if o > 0]
         print(
             f"{st.name:<24}{st.instances:>6}{rate:>9.2%}"
-            f"{_mean(st.baseline_moves):>9.1f}"
-            f"{_mean(st.optimal_moves):>9.1f}"
-            f"{_mean(st.gaps):>8.1f}"
+            f"{_mean(st.baseline_moves_all):>10.1f}"
+            f"{len(st.covered):>7}"
+            f"{_mean(cov_moves):>9.1f}"
+            f"{_mean(cov_opt):>9.1f}"
+            f"{_mean(gaps):>8.1f}"
         )
 
 
@@ -98,6 +107,13 @@ def main(argv: list[str] | None = None) -> int:
         total_successes += stats.successes
 
     _print_table(all_stats)
+    incomplete = [st.name for st in all_stats if len(st.covered) < st.instances]
+    if incomplete:
+        print(
+            "\nwarning: the exact solver covered only a subsample for "
+            + ", ".join(incomplete)
+            + "; base_mv, opt_mv and gap_% for those cover that subsample only."
+        )
     overall = total_successes / total_instances if total_instances else 0.0
     print(f"\noverall success rate: {overall:.2%} ({total_successes}/{total_instances})")
 
