@@ -150,7 +150,11 @@ class PickerEnv:
         return False
 
     def _snapshot(self) -> State:
-        """Return a deep-enough copy of the current state for reward shaping."""
+        """Return a deep-enough copy of the current state for reward shaping.
+
+        The ``action_log`` is left at its default empty list: no reward function
+        reads it, so copying it every step would be pure waste.
+        """
         st = self._state
         return State(
             instance=self.instance,
@@ -158,7 +162,6 @@ class PickerEnv:
             shelves={cell: dict(stock) for cell, stock in st.shelves.items()},
             tote=dict(st.tote),
             steps_taken=st.steps_taken,
-            action_log=list(st.action_log),
             invalid_count=st.invalid_count,
             done=st.done,
         )
