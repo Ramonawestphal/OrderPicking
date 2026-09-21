@@ -73,13 +73,21 @@ def _print_table(all_stats: list[_VariantStats]) -> None:
         cov_moves = [m for m, _o in st.covered]
         cov_opt = [o for _m, o in st.covered]
         gaps = [(m - o) / o * 100.0 for m, o in st.covered if o > 0]
+        if st.covered:
+            base_mv = f"{_mean(cov_moves):>9.1f}"
+            opt_mv = f"{_mean(cov_opt):>9.1f}"
+            gap = f"{_mean(gaps):>8.1f}"
+        else:
+            # No exact optima: leave the comparative columns blank rather than
+            # printing 0.0, which reads as "the baseline is optimal".
+            base_mv = f"{'n/a':>9}"
+            opt_mv = f"{'n/a':>9}"
+            gap = f"{'n/a':>8}"
         print(
             f"{st.name:<24}{st.instances:>6}{rate:>9.2%}"
             f"{_mean(st.baseline_moves_all):>10.1f}"
             f"{len(st.covered):>7}"
-            f"{_mean(cov_moves):>9.1f}"
-            f"{_mean(cov_opt):>9.1f}"
-            f"{_mean(gaps):>8.1f}"
+            f"{base_mv}{opt_mv}{gap}"
         )
 
 
