@@ -7,7 +7,6 @@ the codebase. Invalid actions never raise and never terminate the episode.
 
 from __future__ import annotations
 
-import copy
 from collections.abc import Callable
 
 from .layout import DIRECTION_DELTAS, Cell, Layout
