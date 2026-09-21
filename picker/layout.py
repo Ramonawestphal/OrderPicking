@@ -130,3 +130,22 @@ class Layout:
                         queue.append(nxt)
             self._dist[source] = dist
             self._parent[source] = parent
+
+
+_LAYOUT_CACHE: dict[tuple[int, int], Layout] = {}
+
+
+def get_layout(rows: int = 7, cols: int = 9) -> Layout:
+    """Return a shared :class:`Layout` for ``(rows, cols)``, building it once.
+
+    A :class:`Layout` is a pure function of its dimensions and is never mutated
+    through its public API (``path`` only fills an internal, result-preserving
+    memo), so a single instance is safely shared across every environment with
+    the same grid size instead of rebuilding the all-pairs BFS each time.
+    """
+    key = (rows, cols)
+    layout = _LAYOUT_CACHE.get(key)
+    if layout is None:
+        layout = Layout(rows, cols)
+        _LAYOUT_CACHE[key] = layout
+    return layout

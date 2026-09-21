@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .layout import DIRECTION_DELTAS, Cell, Layout
+from .layout import DIRECTION_DELTAS, Cell, Layout, get_layout
 from .rewards import shaped_reward
 from .types import Action, Instance, State
 
@@ -29,7 +29,7 @@ class PickerEnv:
         deliberately broken exhibit through the normal environment API.
         """
         self.instance = instance
-        self.layout = Layout(instance.rows, instance.cols)
+        self.layout = get_layout(instance.rows, instance.cols)
         self.reward_fn = reward_fn
         self._initial_counts: dict[str, int] = {}
         self._state: State
