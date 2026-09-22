@@ -63,6 +63,8 @@ exhibit through the normal environment API.
       test_verifier.py    the four required verifier cases
       test_solver.py      exact solver covers every generated instance
       test_env_reward.py  step() honours a pluggable reward_fn
+      test_exploit.py     the documented reward exploit, its fix and the proving tests
+      test_run.py         reporting renders n/a for an empty subsample
 
 ## Variants
 
