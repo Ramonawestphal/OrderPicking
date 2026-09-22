@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import random
 
-from .layout import Cell, Layout
+from .layout import Cell, get_layout
 from .types import Instance
 
 VARIANTS: list[str] = [
@@ -40,7 +40,7 @@ def generate(variant: str, seed: int) -> Instance:
         raise ValueError(f"unknown variant: {variant}")
 
     rng = random.Random(seed)
-    layout = Layout(_DEFAULT_ROWS, _DEFAULT_COLS)
+    layout = get_layout(_DEFAULT_ROWS, _DEFAULT_COLS)
     rows, cols = layout.rows, layout.cols
     columns = sorted({c for _r, c in layout.storage_locations()})
     cells_by_col: dict[int, list[Cell]] = {
